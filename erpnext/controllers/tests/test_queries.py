@@ -5,6 +5,7 @@ from frappe.core.doctype.user_permission.test_user_permission import create_user
 from frappe.core.doctype.user_permission.user_permission import add_user_permissions
 from frappe.custom.doctype.property_setter.property_setter import make_property_setter
 
+from erpnext.accounts.doctype.cost_center.test_cost_center import create_cost_center
 from erpnext.controllers import queries
 from erpnext.stock.doctype.item.test_item import make_item
 from erpnext.subcontracting.doctype.subcontracting_order.test_subcontracting_order import (
@@ -20,6 +21,23 @@ def add_default_params(func, doctype):
 class TestQueries(ERPNextTestSuite):
 	def assert_nested_in(self, item, container):
 		self.assertIn(item, [vals for tuples in container for vals in tuples])
+
+	def test_filtered_dimensions_pagination(self):
+		for suffix in ("C", "A", "B"):
+			create_cost_center(cost_center_name=f"Kiln Line {suffix}")
+
+		query = partial(
+			queries.get_filtered_dimensions,
+			doctype="Cost Center",
+			searchfield="name",
+			txt="Kiln Line",
+			filters={"dimension": "cost_center", "company": "_Test Company"},
+			page_len=2,
+		)
+
+		self.assertEqual([row[0] for row in query(start=0)], ["Kiln Line A - _TC", "Kiln Line B - _TC"])
+		self.assertEqual([row[0] for row in query(start=2)], ["Kiln Line C - _TC"])
+		self.assertFalse(query(start=4))
 
 	def test_employee_query(self):
 		query = add_default_params(queries.employee_query, "Employee")
