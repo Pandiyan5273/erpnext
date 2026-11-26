@@ -1070,16 +1070,18 @@ def get_filtered_dimensions(
 
 		query_filters.append(["name", query_selector, dimensions])
 
-	output = frappe.get_list(
+	return frappe.get_list(
 		doctype,
 		fields=fields,
 		filters=query_filters,
 		or_filters=or_filters,
+		group_by="name",
+		order_by="name asc",
+		offset=start,
+		limit=page_len,
 		as_list=1,
 		reference_doctype=reference_doctype,
 	)
-
-	return [tuple(d) for d in set(output)]
 
 
 @frappe.whitelist()
